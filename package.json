@@ -1,0 +1,15 @@
+{
+  "name": "framersite",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Framer code components",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "framer": "^2.4.0",
+    "react": "^18.2.0",
+    "typescript": "^5.4.0"
+  }
+}
