@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+<title>8-Week Trainer</title>
+
+<!-- iOS home-screen / standalone app behavior -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="8wk Trainer" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#0b0d12" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="manifest" href="manifest.json" />
+
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div id="app">
+<div id="screens-viewport">
+
+  <!-- ===================== HOME ===================== -->
+  <section id="screen-home" class="screen active">
+    <header class="topbar">
+      <div>
+        <h1 class="app-title">8-Week Trainer</h1>
+        <p class="app-subtitle">3–4 sessions/week · 60 minutes each</p>
+      </div>
+    </header>
+
+    <div class="scroll-area">
+
+      <div class="card week-picker">
+        <div class="week-picker-row">
+          <button class="stepper-btn" id="week-dec" aria-label="Previous week">–</button>
+          <div class="week-picker-label">
+            <span class="week-picker-num" id="current-week-num">1</span>
+            <span class="week-picker-of">of 8 weeks</span>
+          </div>
+          <button class="stepper-btn" id="week-inc" aria-label="Next week">+</button>
+        </div>
+        <div id="phase-info" class="phase-info"></div>
+      </div>
+
+      <h2 class="section-heading">This week</h2>
+      <div id="weekly-structure" class="session-list"></div>
+
+      <div class="card rule-card">
+        <h3>The Fascia Rule</h3>
+        <div class="rule-row"><span class="rule-dot before"></span><div><strong>Before</strong><br/>Dynamic, flowing movement</div></div>
+        <div class="rule-row"><span class="rule-dot during"></span><div><strong>During</strong><br/>Conventional progressive strength work</div></div>
+        <div class="rule-row"><span class="rule-dot after"></span><div><strong>After</strong><br/>Gentle mobility + stretching</div></div>
+      </div>
+
+      <h2 class="section-heading">All sessions</h2>
+      <div id="all-sessions" class="session-list"></div>
+
+      <div style="height:24px"></div>
+    </div>
+  </section>
+
+  <!-- ===================== PLAYER ===================== -->
+  <section id="screen-player" class="screen">
+    <header class="topbar player-topbar">
+      <button class="icon-btn" id="player-close" aria-label="Close">✕</button>
+      <div class="player-heading">
+        <span id="player-session-label"></span>
+        <span id="player-elapsed" class="player-elapsed">0:00</span>
+      </div>
+      <div style="width:36px"></div>
+    </header>
+
+    <div class="progress-track"><div id="player-progress-fill" class="progress-fill"></div></div>
+
+    <div class="scroll-area" id="player-body">
+      <!-- rendered by app.js -->
+    </div>
+
+    <footer class="player-footer">
+      <button class="footer-btn secondary" id="player-prev">Back</button>
+      <button class="footer-btn primary" id="player-next">Next</button>
+    </footer>
+  </section>
+
+  <!-- ===================== TIMER OVERLAY ===================== -->
+  <section id="screen-timer" class="screen timer-overlay">
+    <div class="timer-content">
+      <p id="timer-label" class="timer-label">Rest</p>
+      <div class="timer-ring-wrap">
+        <svg class="timer-ring" viewBox="0 0 240 240">
+          <circle class="timer-ring-bg" cx="120" cy="120" r="108"></circle>
+          <circle id="timer-ring-progress" class="timer-ring-progress" cx="120" cy="120" r="108"></circle>
+        </svg>
+        <div id="timer-display" class="timer-display">0:00</div>
+      </div>
+      <p id="timer-sublabel" class="timer-sublabel"></p>
+      <div class="timer-controls">
+        <button class="timer-btn" id="timer-restart">Restart</button>
+        <button class="timer-btn primary" id="timer-toggle">Pause</button>
+        <button class="timer-btn" id="timer-skip">Skip</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== COMPLETE ===================== -->
+  <section id="screen-complete" class="screen">
+    <div class="complete-wrap">
+      <div class="complete-badge">✓</div>
+      <h1>Session Complete</h1>
+      <p id="complete-summary" class="complete-summary"></p>
+      <button class="footer-btn primary" id="complete-done" style="max-width:280px">Done</button>
+    </div>
+  </section>
+
+  <!-- ===================== PROGRESS ===================== -->
+  <section id="screen-progress" class="screen">
+    <header class="topbar">
+      <div>
+        <h1 class="app-title">Progress</h1>
+        <p class="app-subtitle" id="progress-subtitle">No sessions logged yet</p>
+      </div>
+    </header>
+    <div class="scroll-area">
+      <div id="progress-list" class="progress-list"></div>
+      <button class="footer-btn secondary" id="progress-clear" style="margin:16px auto;max-width:280px">Clear history</button>
+      <div style="height:24px"></div>
+    </div>
+  </section>
+
+</div>
+
+  <!-- ===================== BOTTOM NAV ===================== -->
+  <nav class="bottom-nav" id="bottom-nav">
+    <button class="nav-btn active" data-nav="home">
+      <span class="nav-icon">⌂</span><span>Home</span>
+    </button>
+    <button class="nav-btn" data-nav="progress">
+      <span class="nav-icon">✓</span><span>Progress</span>
+    </button>
+  </nav>
+
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
