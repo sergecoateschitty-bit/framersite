@@ -51,3 +51,37 @@ npm run typecheck
 This only checks types against the `framer` package's type definitions —
 the component itself only runs inside Framer (or any React host that
 provides the same `framer` runtime exports).
+
+---
+
+# Scroll Snap (Framer code component)
+
+A scrolling container that snaps section-by-section, with a custom
+scrollbar — for presentations, product showcases and full-screen
+one-page sites.
+
+**File:** [`components/ScrollSnap.tsx`](components/ScrollSnap.tsx)
+
+## How it works
+
+- Connect any number of layers to **Sections**. Each one is stretched to
+  the full size of the component, so you control the size of the
+  container (set it to fill the viewport for a full-screen experience).
+- Scrolling inside the component snaps to the next / previous section
+  (native CSS scroll snap, so touch devices get momentum snapping).
+- **One Per Scroll** takes over the mouse wheel / trackpad so a single
+  flick moves exactly one section, with an eased transition of
+  configurable **Duration**. At the first/last section the page keeps
+  scrolling normally.
+- A custom **scrollbar** (native one hidden) shows your position:
+  adjustable color, track color, width, inset, radius and side.
+- **Keyboard**: Arrow keys, Page Up/Down, Space, Home/End.
+- **Direction**: vertical (default) or horizontal.
+
+## Using it in Framer
+
+1. Assets → Code → New Code File, paste `components/ScrollSnap.tsx`.
+2. Drag **Scroll Snap** onto the canvas and size it (e.g. 100vw × 100vh).
+3. Design each section as its own frame (off-canvas is fine), then add
+   them to **Sections** in the properties panel.
+4. Preview — scrolling only snaps in Preview / on the published site.
