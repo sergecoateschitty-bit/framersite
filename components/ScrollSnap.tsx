@@ -16,6 +16,8 @@ import { addPropertyControls, ControlType, RenderTarget } from "framer"
  */
 
 type Align = "start" | "center" | "end"
+// Same sizing options as a layer inside a Framer auto layout (stack).
+type SizeType = "fixed" | "relative" | "fill" | "fit"
 
 interface Props {
     sections: React.ReactNode[]
@@ -24,11 +26,12 @@ interface Props {
     alignHorizontal: Align
     sectionSize: number
     sectionGap: number
-    contentSize: "fill" | "custom"
-    contentWidth: number
-    contentWidthUnit: "px" | "%"
-    contentHeight: number
-    contentHeightUnit: "px" | "%"
+    contentWidthType: SizeType
+    contentWidthFixed: number
+    contentWidthRelative: number
+    contentHeightType: SizeType
+    contentHeightFixed: number
+    contentHeightRelative: number
     contentAlignX: Align
     contentAlignY: Align
     snapStrength: "mandatory" | "proximity"
@@ -59,6 +62,24 @@ function resize(child: React.ReactNode, size: React.CSSProperties): React.ReactN
     })
 }
 
+function axisSize(
+    axis: "width" | "height",
+    type: SizeType,
+    fixed: number,
+    relative: number
+): React.CSSProperties {
+    switch (type) {
+        case "fixed":
+            return { [axis]: Math.max(0, fixed ?? 0) }
+        case "relative":
+            return { [axis]: `${Math.max(0, relative ?? 100)}%` }
+        case "fit":
+            return {}
+        default:
+            return { [axis]: "100%" }
+    }
+}
+
 const flexAlign = { start: "flex-start", center: "center", end: "flex-end" } as const
 
 function easeInOutCubic(t: number): number {
@@ -73,11 +94,12 @@ export default function ScrollSnap(props: Props) {
         alignHorizontal,
         sectionSize,
         sectionGap,
-        contentSize,
-        contentWidth,
-        contentWidthUnit,
-        contentHeight,
-        contentHeightUnit,
+        contentWidthType,
+        contentWidthFixed,
+        contentWidthRelative,
+        contentHeightType,
+        contentHeightFixed,
+        contentHeightRelative,
         contentAlignX,
         contentAlignY,
         snapStrength,
@@ -325,18 +347,14 @@ export default function ScrollSnap(props: Props) {
     const free = 100 - size
     const leadSpace = align === "center" ? free / 2 : align === "end" ? free : 0
     const trailSpace = align === "center" ? free / 2 : align === "start" ? free : 0
-    // Size of the layer inside each section. "%" is relative to the section;
-    // capped at the section so it never spills out on small screens.
-    const contentStyle: React.CSSProperties =
-        contentSize === "custom"
-            ? {
-                  width: `${Math.max(0, contentWidth ?? 100)}${contentWidthUnit || "%"}`,
-                  height: `${Math.max(0, contentHeight ?? 100)}${contentHeightUnit || "%"}`,
-                  maxWidth: "100%",
-                  maxHeight: "100%",
-                  flexShrink: 0,
-              }
-            : { width: "100%", height: "100%" }
+    // Size of the layer inside each section, per axis, like a stack child:
+    // Fixed = px, Relative = % of the section, Fill = the whole section,
+    // Fit Content = leave the layer at its own size.
+    const contentStyle: React.CSSProperties = {
+        flexShrink: 0,
+        ...axisSize("width", contentWidthType, contentWidthFixed, contentWidthRelative),
+        ...axisSize("height", contentHeightType, contentHeightFixed, contentHeightRelative),
+    }
 
     const spacerStyle = (percent: number): React.CSSProperties => ({
         flex: `0 0 ${percent}%`,
@@ -505,47 +523,59 @@ addPropertyControls(ScrollSnap, {
         max: 500,
         step: 1,
     },
-    contentSize: {
+    contentWidthType: {
         type: ControlType.Enum,
-        title: "Content",
-        options: ["fill", "custom"],
-        optionTitles: ["Fill", "Custom"],
-        displaySegmentedControl: true,
+        title: "Content Width",
+        options: ["fixed", "relative", "fill", "fit"],
+        optionTitles: ["Fixed", "Relative", "Fill", "Fit Content"],
         defaultValue: "fill",
     },
-    contentWidth: {
+    contentWidthFixed: {
         type: ControlType.Number,
-        title: "Width",
+        title: " ",
+        defaultValue: 600,
+        min: 0,
+        max: 10000,
+        step: 1,
+        unit: "px",
+        hidden: (props: Props) => props.contentWidthType !== "fixed",
+    },
+    contentWidthRelative: {
+        type: ControlType.Number,
+        title: " ",
         defaultValue: 80,
         min: 0,
-        max: 4000,
+        max: 100,
         step: 1,
-        hidden: (props: Props) => props.contentSize !== "custom",
+        unit: "%",
+        hidden: (props: Props) => props.contentWidthType !== "relative",
     },
-    contentWidthUnit: {
+    contentHeightType: {
         type: ControlType.Enum,
-        title: " ",
-        options: ["%", "px"],
-        displaySegmentedControl: true,
-        defaultValue: "%",
-        hidden: (props: Props) => props.contentSize !== "custom",
+        title: "Content Height",
+        options: ["fixed", "relative", "fill", "fit"],
+        optionTitles: ["Fixed", "Relative", "Fill", "Fit Content"],
+        defaultValue: "fill",
     },
-    contentHeight: {
+    contentHeightFixed: {
         type: ControlType.Number,
-        title: "Height",
+        title: " ",
+        defaultValue: 400,
+        min: 0,
+        max: 10000,
+        step: 1,
+        unit: "px",
+        hidden: (props: Props) => props.contentHeightType !== "fixed",
+    },
+    contentHeightRelative: {
+        type: ControlType.Number,
+        title: " ",
         defaultValue: 80,
         min: 0,
-        max: 4000,
+        max: 100,
         step: 1,
-        hidden: (props: Props) => props.contentSize !== "custom",
-    },
-    contentHeightUnit: {
-        type: ControlType.Enum,
-        title: " ",
-        options: ["%", "px"],
-        displaySegmentedControl: true,
-        defaultValue: "%",
-        hidden: (props: Props) => props.contentSize !== "custom",
+        unit: "%",
+        hidden: (props: Props) => props.contentHeightType !== "relative",
     },
     contentAlignX: {
         type: ControlType.Enum,
@@ -554,7 +584,8 @@ addPropertyControls(ScrollSnap, {
         optionTitles: ["Left", "Center", "Right"],
         displaySegmentedControl: true,
         defaultValue: "center",
-        hidden: (props: Props) => props.contentSize !== "custom",
+        hidden: (props: Props) =>
+            props.contentWidthType === "fill" && props.contentHeightType === "fill",
     },
     contentAlignY: {
         type: ControlType.Enum,
@@ -563,7 +594,8 @@ addPropertyControls(ScrollSnap, {
         optionTitles: ["Top", "Center", "Bottom"],
         displaySegmentedControl: true,
         defaultValue: "center",
-        hidden: (props: Props) => props.contentSize !== "custom",
+        hidden: (props: Props) =>
+            props.contentWidthType === "fill" && props.contentHeightType === "fill",
     },
     snapStrength: {
         type: ControlType.Enum,
