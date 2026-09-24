@@ -77,6 +77,11 @@ one-page sites.
   adjustable color, track color, width, inset, radius and side.
 - **Keyboard**: Arrow keys, Page Up/Down, Space, Home/End.
 - **Direction**: vertical (default) or horizontal.
+- **Align**: where each section settles when it snaps — Top / Center /
+  Bottom when vertical, Left / Center / Right when horizontal. Use it with
+  **Section Size** (% of the container) below 100% and an optional
+  **Gap** so neighbouring sections peek in; every section, including the
+  first and last, can reach the chosen alignment.
 
 ## Using it in Framer
 

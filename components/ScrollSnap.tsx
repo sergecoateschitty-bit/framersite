@@ -15,9 +15,15 @@ import { addPropertyControls, ControlType, RenderTarget } from "framer"
  * full-screen, presentation-style page.
  */
 
+type Align = "start" | "center" | "end"
+
 interface Props {
     sections: React.ReactNode[]
     direction: "vertical" | "horizontal"
+    alignVertical: Align
+    alignHorizontal: Align
+    sectionSize: number
+    sectionGap: number
     snapStrength: "mandatory" | "proximity"
     onePerScroll: boolean
     transitionDuration: number
@@ -55,6 +61,10 @@ export default function ScrollSnap(props: Props) {
     const {
         sections,
         direction,
+        alignVertical,
+        alignHorizontal,
+        sectionSize,
+        sectionGap,
         snapStrength,
         onePerScroll,
         transitionDuration,
@@ -71,37 +81,62 @@ export default function ScrollSnap(props: Props) {
     } = props
 
     const isVertical = direction === "vertical"
+    const align: Align = (isVertical ? alignVertical : alignHorizontal) || "start"
+    const size = Math.max(10, Math.min(100, sectionSize ?? 100))
+    const gap = Math.max(0, sectionGap || 0)
     const isCanvas = RenderTarget.current() === RenderTarget.canvas
     const items = (sections || []).filter(Boolean)
     const count = items.length
 
     const scrollRef = useRef<HTMLDivElement>(null)
+    const sectionRefs = useRef<(HTMLDivElement | null)[]>([])
     const animating = useRef(false)
     const frame = useRef<number | null>(null)
     const [progress, setProgress] = useState(0)
+    const [thumbFraction, setThumbFraction] = useState(1)
 
-    const viewportSize = () => {
+    // Scroll offset at which section `index` sits at the chosen alignment
+    // (its start, center or end lined up with the container's).
+    const targetFor = (index: number) => {
         const node = scrollRef.current
-        if (!node) return 0
-        return isVertical ? node.clientHeight : node.clientWidth
+        const section = sectionRefs.current[index]
+        if (!node || !section) return 0
+        const viewport = isVertical ? node.clientHeight : node.clientWidth
+        const offset = isVertical ? section.offsetTop : section.offsetLeft
+        const length = isVertical ? section.offsetHeight : section.offsetWidth
+        const shift =
+            align === "center" ? (viewport - length) / 2 : align === "end" ? viewport - length : 0
+        const max = isVertical
+            ? node.scrollHeight - node.clientHeight
+            : node.scrollWidth - node.clientWidth
+        return Math.max(0, Math.min(max, offset - shift))
     }
 
     const currentIndex = () => {
         const node = scrollRef.current
-        const size = viewportSize()
-        if (!node || !size) return 0
+        if (!node) return 0
         const offset = isVertical ? node.scrollTop : node.scrollLeft
-        return Math.round(offset / size)
+        let best = 0
+        let bestDistance = Infinity
+        for (let i = 0; i < count; i++) {
+            const distance = Math.abs(targetFor(i) - offset)
+            if (distance < bestDistance) {
+                best = i
+                bestDistance = distance
+            }
+        }
+        return best
     }
 
     const updateProgress = useCallback(() => {
         const node = scrollRef.current
         if (!node) return
-        const max = isVertical
-            ? node.scrollHeight - node.clientHeight
-            : node.scrollWidth - node.clientWidth
+        const total = isVertical ? node.scrollHeight : node.scrollWidth
+        const visible = isVertical ? node.clientHeight : node.clientWidth
+        const max = total - visible
         const offset = isVertical ? node.scrollTop : node.scrollLeft
         setProgress(max > 0 ? offset / max : 0)
+        setThumbFraction(total > 0 ? Math.min(1, visible / total) : 1)
     }, [isVertical])
 
     // Animate to a section ourselves (instead of scrollTo smooth) so the
@@ -110,7 +145,7 @@ export default function ScrollSnap(props: Props) {
         (index: number) => {
             const node = scrollRef.current
             if (!node) return
-            const target = Math.max(0, Math.min(count - 1, index)) * viewportSize()
+            const target = targetFor(Math.max(0, Math.min(count - 1, index)))
             const from = isVertical ? node.scrollTop : node.scrollLeft
             const distance = target - from
             if (Math.abs(distance) < 1) return
@@ -137,7 +172,7 @@ export default function ScrollSnap(props: Props) {
             }
             frame.current = requestAnimationFrame(step)
         },
-        [count, isVertical, transitionDuration]
+        [count, isVertical, align, transitionDuration]
     )
 
     // "One section per scroll": take over the wheel so a single flick of a
@@ -207,7 +242,7 @@ export default function ScrollSnap(props: Props) {
             if (!animating.current) lastIndex = currentIndex()
         }
         const observer = new ResizeObserver(() => {
-            const offset = lastIndex * viewportSize()
+            const offset = targetFor(lastIndex)
             if (isVertical) node.scrollTop = offset
             else node.scrollLeft = offset
             updateProgress()
@@ -218,7 +253,17 @@ export default function ScrollSnap(props: Props) {
             node.removeEventListener("scroll", onScroll)
             observer.disconnect()
         }
-    }, [isVertical, updateProgress])
+    }, [isVertical, align, count, updateProgress])
+
+    // Start on the first section, lined up with the chosen alignment.
+    useEffect(() => {
+        const node = scrollRef.current
+        if (!node) return
+        const offset = targetFor(0)
+        if (isVertical) node.scrollTop = offset
+        else node.scrollLeft = offset
+        updateProgress()
+    }, [isVertical, align, size, gap, count])
 
     useEffect(() => {
         updateProgress()
@@ -259,8 +304,17 @@ export default function ScrollSnap(props: Props) {
 
     // Thumb length = visible fraction of the content; it travels along the
     // track as you scroll.
-    const thumbFraction = 1 / count
     const thumbOffset = progress * (1 - thumbFraction)
+    // Empty space before the first / after the last section so that every
+    // section — including the ends — can reach the chosen alignment.
+    const free = 100 - size
+    const leadSpace = align === "center" ? free / 2 : align === "end" ? free : 0
+    const trailSpace = align === "center" ? free / 2 : align === "start" ? free : 0
+    const spacerStyle = (percent: number): React.CSSProperties => ({
+        flex: `0 0 ${percent}%`,
+        pointerEvents: "none",
+    })
+
     const edge = scrollbarPosition === "end" ? (isVertical ? "right" : "bottom") : isVertical ? "left" : "top"
 
     return (
@@ -281,6 +335,7 @@ export default function ScrollSnap(props: Props) {
                 tabIndex={keyboard ? 0 : undefined}
                 onScroll={updateProgress}
                 style={{
+                    position: "relative",
                     width: "100%",
                     height: "100%",
                     display: "flex",
@@ -297,22 +352,27 @@ export default function ScrollSnap(props: Props) {
                     outline: "none",
                 } as React.CSSProperties}
             >
+                {leadSpace > 0 && <div aria-hidden style={spacerStyle(leadSpace)} />}
                 {items.map((section, index) => (
                     <div
                         key={index}
+                        ref={(el) => {
+                            sectionRefs.current[index] = el
+                        }}
                         style={{
                             position: "relative",
-                            flex: "0 0 100%",
-                            width: "100%",
-                            height: "100%",
+                            flex: `0 0 ${size}%`,
+                            [isVertical ? "width" : "height"]: "100%",
+                            [isVertical ? "marginTop" : "marginLeft"]: index > 0 ? gap : 0,
                             overflow: "hidden",
-                            scrollSnapAlign: "start",
+                            scrollSnapAlign: align,
                             scrollSnapStop: "always",
                         }}
                     >
                         {stretch(section)}
                     </div>
                 ))}
+                {trailSpace > 0 && <div aria-hidden style={spacerStyle(trailSpace)} />}
             </div>
 
             {showScrollbar && count > 1 && (
@@ -378,6 +438,41 @@ addPropertyControls(ScrollSnap, {
         optionTitles: ["Vertical", "Horizontal"],
         displaySegmentedControl: true,
         defaultValue: "vertical",
+    },
+    alignVertical: {
+        type: ControlType.Enum,
+        title: "Align",
+        options: ["start", "center", "end"],
+        optionTitles: ["Top", "Center", "Bottom"],
+        displaySegmentedControl: true,
+        defaultValue: "start",
+        hidden: (props: Props) => props.direction !== "vertical",
+    },
+    alignHorizontal: {
+        type: ControlType.Enum,
+        title: "Align",
+        options: ["start", "center", "end"],
+        optionTitles: ["Left", "Center", "Right"],
+        displaySegmentedControl: true,
+        defaultValue: "start",
+        hidden: (props: Props) => props.direction !== "horizontal",
+    },
+    sectionSize: {
+        type: ControlType.Number,
+        title: "Section Size",
+        defaultValue: 100,
+        min: 10,
+        max: 100,
+        step: 1,
+        unit: "%",
+    },
+    sectionGap: {
+        type: ControlType.Number,
+        title: "Gap",
+        defaultValue: 0,
+        min: 0,
+        max: 500,
+        step: 1,
     },
     snapStrength: {
         type: ControlType.Enum,
