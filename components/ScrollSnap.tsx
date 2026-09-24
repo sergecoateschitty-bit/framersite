@@ -1,5 +1,5 @@
 import * as React from "react"
-import { useRef, useState, useEffect, useCallback } from "react"
+import { useRef, useState, useEffect, useCallback, useId } from "react"
 import { addPropertyControls, ControlType, RenderTarget } from "framer"
 
 /**
@@ -127,6 +127,7 @@ export default function ScrollSnap(props: Props) {
 
     const scrollRef = useRef<HTMLDivElement>(null)
     const sectionRefs = useRef<(HTMLDivElement | null)[]>([])
+    const instanceId = useId()
     const animating = useRef(false)
     const frame = useRef<number | null>(null)
     const [progress, setProgress] = useState(0)
@@ -356,6 +357,19 @@ export default function ScrollSnap(props: Props) {
         ...axisSize("height", contentHeightType, contentHeightFixed, contentHeightRelative),
     }
 
+    // Framer can size a connected layer through its own classes (e.g. a stack
+    // set to Fit), which may beat the inline size above. Repeat the size as
+    // an !important rule on the section's direct child so it always applies.
+    const important = (axis: "width" | "height", value: React.CSSProperties["width"]) =>
+        value === undefined
+            ? ""
+            : `${axis}:${typeof value === "number" ? `${value}px` : value} !important;` +
+              `min-${axis}:0 !important;max-${axis}:none !important;`
+    const contentCss = `[data-scroll-snap="${instanceId}"]>[data-scroll-snap-section]>*{flex-shrink:0 !important;${important(
+        "width",
+        contentStyle.width
+    )}${important("height", contentStyle.height)}}`
+
     const spacerStyle = (percent: number): React.CSSProperties => ({
         flex: `0 0 ${percent}%`,
         pointerEvents: "none",
@@ -374,10 +388,11 @@ export default function ScrollSnap(props: Props) {
                 backgroundColor,
             }}
         >
-            <style>{`.framer-scroll-snap::-webkit-scrollbar{display:none}`}</style>
+            <style>{`.framer-scroll-snap::-webkit-scrollbar{display:none}${contentCss}`}</style>
             <div
                 ref={scrollRef}
                 className="framer-scroll-snap"
+                data-scroll-snap={instanceId}
                 tabIndex={keyboard ? 0 : undefined}
                 onScroll={updateProgress}
                 style={{
@@ -402,6 +417,7 @@ export default function ScrollSnap(props: Props) {
                 {items.map((section, index) => (
                     <div
                         key={index}
+                        data-scroll-snap-section=""
                         ref={(el) => {
                             sectionRefs.current[index] = el
                         }}
