@@ -82,6 +82,13 @@ one-page sites.
   **Section Size** (% of the container) below 100% and an optional
   **Gap** so neighbouring sections peek in; every section, including the
   first and last, can reach the chosen alignment.
+- **Content**: size of the layer *inside* each section. **Fill** stretches
+  it to the section; **Custom** sets its **Width** and **Height** in `%`
+  (of the section) or `px`, positioned with **Content X** (Left / Center /
+  Right) and **Content Y** (Top / Center / Bottom). Custom sizes are capped
+  at the section so they never spill out on small screens. E.g. a
+  full-width, 100vh component with a 60% × 70% image centered in each
+  section.
 
 ## Using it in Framer
 
