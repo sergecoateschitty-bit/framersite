@@ -34,6 +34,7 @@ interface Props {
     contentHeightRelative: number
     contentAlignX: Align
     contentAlignY: Align
+    padding: string
     snapStrength: "mandatory" | "proximity"
     onePerScroll: boolean
     transitionDuration: number
@@ -102,6 +103,7 @@ export default function ScrollSnap(props: Props) {
         contentHeightRelative,
         contentAlignX,
         contentAlignY,
+        padding,
         snapStrength,
         onePerScroll,
         transitionDuration,
@@ -427,6 +429,8 @@ export default function ScrollSnap(props: Props) {
                             [isVertical ? "width" : "height"]: "100%",
                             [isVertical ? "marginTop" : "marginLeft"]: index > 0 ? gap : 0,
                             overflow: "hidden",
+                            boxSizing: "border-box",
+                            padding,
                             display: "flex",
                             justifyContent: flexAlign[contentAlignX] || "center",
                             alignItems: flexAlign[contentAlignY] || "center",
@@ -612,6 +616,11 @@ addPropertyControls(ScrollSnap, {
         defaultValue: "center",
         hidden: (props: Props) =>
             props.contentWidthType === "fill" && props.contentHeightType === "fill",
+    },
+    padding: {
+        type: "padding" as ControlType,
+        title: "Padding",
+        defaultValue: "0px",
     },
     snapStrength: {
         type: ControlType.Enum,

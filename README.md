@@ -89,6 +89,9 @@ one-page sites.
   with **Content X** (Left / Center / Right) and **Content Y** (Top /
   Center / Bottom). E.g. a full-width, 100vh component with a Relative
   60% × 70% image centered in each section.
+- **Padding**: space inside each section around its content (all sides
+  or per side, like a frame's padding). Fill and Relative sizes are
+  measured inside the padding.
 
 ## Using it in Framer
 
