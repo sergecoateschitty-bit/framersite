@@ -1,3 +1,12 @@
+# framersite
+
+| Project | Description |
+| --- | --- |
+| [`pdf-editor/`](pdf-editor/) | **PDF Studio**: a browser-based PDF viewer and editor modeled on Adobe Acrobat Reader (annotate, fill & sign, organize pages, search, save). See [`pdf-editor/README.md`](pdf-editor/README.md). |
+| [`components/`](components/) | Framer code components (below). |
+
+---
+
 # Multi-Column Text Box (Framer code component)
 
 A Framer code component for long-form copy that reflows into columns and
